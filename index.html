@@ -228,7 +228,7 @@
                     
                     if (response.ok) {
                         // 上传成功
-                        const imageUrl = `https://raw.githubusercontent.com/你的用户名/你的仓库名/main/${filename}`;
+                        const imageUrl = `https://raw.githubusercontent.com/MinecraftEarthVillage/img/main/${filename}`;
                         const markdown = `![${filename}](${imageUrl})`;
                         
                         showStatus(`上传成功！<br>图片链接: <a href="${imageUrl}" target="_blank">${imageUrl}</a><br>Markdown: <code>${markdown}</code>`, 'success');
