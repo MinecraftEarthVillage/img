@@ -3,6 +3,9 @@ name: 构建和部署相册网站
 on:
   push:
     branches: [ main ]
+    # 排除对图片索引文件的监控，避免循环
+    paths-ignore:
+      - '图片索引.json'
   workflow_dispatch:
 
 permissions:
@@ -15,9 +18,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # 修改这里：将 "构建" 改为英文标识符，比如 "build"
-  build:  # 原来是 "构建"
+  build:
     runs-on: ubuntu-latest
+    
+    # 双重检查：如果是包含[skip ci]的提交，跳过此工作流
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      !contains(github.event.head_commit.message, '[skip ci]') &&
+      !contains(github.event.head_commit.message, '[ci skip]') &&
+      !contains(github.event.head_commit.message, '[no ci]')
     
     steps:
     - name: 检出代码
@@ -34,6 +43,21 @@ jobs:
       run: |
         node 脚本/图片扫描器.js
     
+    - name: 提交更新的索引文件
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add 图片索引.json
+        
+        # 智能检测：只有索引文件确实变化时才提交
+        if [[ -n $(git status --porcelain 图片索引.json) ]]; then
+          echo "检测到图片索引变化，提交更新"
+          git commit -m "自动更新图片索引 [skip ci]"
+          git push
+        else
+          echo "图片索引没有变化，跳过提交"
+        fi
+    
     - name: 安装依赖和构建
       run: |
         # 如果使用构建工具可以在这里安装
@@ -44,13 +68,12 @@ jobs:
       with:
         path: .
   
-  # 修改这里：将 "部署" 改为英文标识符，比如 "deploy"
-  deploy:  # 原来是 "部署"
+  deploy:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    needs: build  # 这里也要同步修改为新的 job ID
+    needs: build
     steps:
       - name: 部署到GitHub Pages
         id: deployment
