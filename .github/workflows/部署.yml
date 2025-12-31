@@ -15,7 +15,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  构建:
+  # 修改这里：将 "构建" 改为英文标识符，比如 "build"
+  build:  # 原来是 "构建"
     runs-on: ubuntu-latest
     
     steps:
@@ -42,13 +43,14 @@ jobs:
       uses: actions/upload-pages-artifact@v3
       with:
         path: .
-    
-  部署:
+  
+  # 修改这里：将 "部署" 改为英文标识符，比如 "deploy"
+  deploy:  # 原来是 "部署"
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    needs: 构建
+    needs: build  # 这里也要同步修改为新的 job ID
     steps:
       - name: 部署到GitHub Pages
         id: deployment
