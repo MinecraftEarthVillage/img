@@ -1,0 +1,10 @@
+name: 测试“你好世界”
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Hello World"
