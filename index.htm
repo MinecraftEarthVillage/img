@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人相册</title>
+    <link rel="stylesheet" href="css.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="页面容器">
+        <header class="页面头部">
+            <h1 id="相册标题">我的个人相册</h1>
+            <div class="控制面板">
+                <div class="搜索框">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="搜索输入" placeholder="搜索图片或相册...">
+                </div>
+                <div class="视图切换">
+                    <button id="网格视图" class="视图按钮 激活"><i class="fas fa-th"></i></button>
+                    <button id="列表视图" class="视图按钮"><i class="fas fa-list"></i></button>
+                </div>
+            </div>
+        </header>
+
+        <main class="主内容区">
+            <div class="面包屑导航" id="面包屑导航">
+                <a href="#" class="导航链接" data-path="">全部相册</a>
+            </div>
+            
+            <div class="加载指示器" id="加载指示器">
+                <div class="旋转动画"></div>
+                <p>正在加载相册...</p>
+            </div>
+            
+            <div class="相册容器" id="相册容器">
+                <!-- 相册和图片将在这里动态生成 -->
+            </div>
+        </main>
+
+        <footer class="页面底部">
+            <p>© 2026 个人相册 | 共 <span id="图片总数">0</span> 张图片</p>
+        </footer>
+
+        <!-- 图片查看模态框 -->
+        <div class="模态框" id="图片模态框">
+            <div class="模态框内容">
+                <div class="模态框头部">
+                    <span class="关闭按钮" id="关闭按钮">&times;</span>
+                    <h3 id="图片标题"></h3>
+                </div>
+                <div class="模态框主体">
+                    <img id="放大图片" src="" alt="">
+                    <div class="图片信息">
+                        <p id="图片路径"></p>
+                        <p id="图片尺寸"></p>
+                    </div>
+                </div>
+                <div class="模态框底部">
+                    <button id="上一张按钮" class="导航按钮"><i class="fas fa-chevron-left"></i> 上一张</button>
+                    <button id="下一张按钮" class="导航按钮">下一张 <i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="脚本/图片扫描器.js"></script>
+    <script src="脚本/相册生成器.js"></script>
+    <script src="脚本/用户界面.js"></script>
+    <script src="脚本/工具函数.js"></script>
+</body>
+</html>

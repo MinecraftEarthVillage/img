@@ -1,0 +1,462 @@
+/* 样式表.css */
+:root {
+    --主色: #4a6fa5;
+    --背景色: #f8f9fa;
+    --卡片背景: #ffffff;
+    --文字色: #333333;
+    --边框色: #e0e0e0;
+    --阴影: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --圆角: 12px;
+    --过渡: all 0.3s ease;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+}
+
+body {
+    background-color: var(--背景色);
+    color: var(--文字色);
+    line-height: 1.6;
+}
+
+.页面容器 {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* 头部样式 */
+.页面头部 {
+    padding: 24px 0;
+    border-bottom: 1px solid var(--边框色);
+    margin-bottom: 30px;
+}
+
+.页面头部 h1 {
+    font-size: 2.5rem;
+    color: var(--主色);
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.控制面板 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.搜索框 {
+    display: flex;
+    align-items: center;
+    background: var(--卡片背景);
+    border: 1px solid var(--边框色);
+    border-radius: 50px;
+    padding: 12px 20px;
+    width: 100%;
+    max-width: 400px;
+    transition: var(--过渡);
+}
+
+.搜索框:focus-within {
+    border-color: var(--主色);
+    box-shadow: 0 0 0 3px rgba(74, 111, 165, 0.2);
+}
+
+.搜索框 i {
+    color: #888;
+    margin-right: 10px;
+}
+
+.搜索框 input {
+    border: none;
+    outline: none;
+    background: transparent;
+    width: 100%;
+    font-size: 1rem;
+}
+
+.视图切换 {
+    display: flex;
+    gap: 8px;
+}
+
+.视图按钮 {
+    background: var(--卡片背景);
+    border: 1px solid var(--边框色);
+    border-radius: 8px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: var(--过渡);
+    font-size: 1.1rem;
+    color: #666;
+}
+
+.视图按钮:hover {
+    border-color: var(--主色);
+    color: var(--主色);
+}
+
+.视图按钮.激活 {
+    background: var(--主色);
+    color: white;
+    border-color: var(--主色);
+}
+
+/* 面包屑导航 */
+.面包屑导航 {
+    margin-bottom: 20px;
+    padding: 15px 0;
+    border-bottom: 1px solid var(--边框色);
+}
+
+.导航链接 {
+    color: var(--主色);
+    text-decoration: none;
+    font-weight: 500;
+    transition: var(--过渡);
+    padding: 5px 10px;
+    border-radius: 6px;
+}
+
+.导航链接:hover {
+    background-color: rgba(74, 111, 165, 0.1);
+}
+
+.导航链接::after {
+    content: " / ";
+    margin: 0 8px;
+    color: #999;
+}
+
+.导航链接:last-child::after {
+    content: "";
+}
+
+/* 主内容区 */
+.主内容区 {
+    flex: 1;
+    padding-bottom: 40px;
+}
+
+.加载指示器 {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 0;
+    color: #666;
+}
+
+.旋转动画 {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid var(--主色);
+    border-radius: 50%;
+    animation: 旋转 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes 旋转 {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 相册容器 */
+.相册容器 {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 25px;
+    transition: var(--过渡);
+}
+
+.相册容器.列表视图 {
+    grid-template-columns: 1fr;
+    gap: 15px;
+}
+
+/* 相册项 */
+.相册项 {
+    background: var(--卡片背景);
+    border-radius: var(--圆角);
+    overflow: hidden;
+    box-shadow: var(--阴影);
+    transition: var(--过渡);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.相册项:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.12);
+}
+
+.相册项.列表视图 {
+    flex-direction: row;
+    height: auto;
+}
+
+.相册项.列表视图 .相册缩略图 {
+    width: 200px;
+    height: 150px;
+    flex-shrink: 0;
+    border-radius: var(--圆角 0 0 var(--圆角));
+}
+
+.相册项.列表视图 .相册信息 {
+    padding: 20px;
+    flex: 1;
+}
+
+.相册缩略图 {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-bottom: 1px solid var(--边框色);
+}
+
+.相册信息 {
+    padding: 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.相册标题 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--文字色);
+}
+
+.相册统计 {
+    color: #666;
+    font-size: 0.9rem;
+    margin-top: auto;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* 图片项 */
+.图片项 {
+    background: var(--卡片背景);
+    border-radius: var(--圆角);
+    overflow: hidden;
+    box-shadow: var(--阴影);
+    transition: var(--过渡);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.图片项:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.图片缩略图 {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    transition: var(--过渡);
+}
+
+.图片项:hover .图片缩略图 {
+    transform: scale(1.05);
+}
+
+.图片信息 {
+    padding: 15px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.图片标题 {
+    font-weight: 500;
+    margin-bottom: 5px;
+    word-break: break-word;
+}
+
+.图片路径 {
+    color: #666;
+    font-size: 0.85rem;
+    margin-top: auto;
+}
+
+/* 空状态 */
+.空状态 {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 60px 20px;
+    color: #888;
+}
+
+.空状态 i {
+    font-size: 3rem;
+    margin-bottom: 20px;
+    color: #ddd;
+}
+
+/* 模态框 */
+.模态框 {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.85);
+    justify-content: center;
+    align-items: center;
+    animation: 渐入 0.3s;
+}
+
+@keyframes 渐入 {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.模态框内容 {
+    background-color: #fff;
+    margin: 20px;
+    max-width: 90%;
+    max-height: 90%;
+    border-radius: var(--圆角);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: 缩放 0.3s;
+}
+
+@keyframes 缩放 {
+    from { transform: scale(0.9); }
+    to { transform: scale(1); }
+}
+
+.模态框头部 {
+    padding: 20px;
+    background: var(--主色);
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.关闭按钮 {
+    font-size: 2rem;
+    cursor: pointer;
+    transition: var(--过渡);
+}
+
+.关闭按钮:hover {
+    color: #ddd;
+}
+
+.模态框主体 {
+    padding: 20px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#放大图片 {
+    max-width: 100%;
+    max-height: 60vh;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.图片信息 {
+    margin-top: 20px;
+    text-align: center;
+    color: #666;
+    width: 100%;
+}
+
+.模态框底部 {
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid var(--边框色);
+}
+
+.导航按钮 {
+    background: var(--主色);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 24px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: var(--过渡);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.导航按钮:hover {
+    background: #3a5a8a;
+}
+
+/* 页面底部 */
+.页面底部 {
+    text-align: center;
+    padding: 25px 0;
+    color: #666;
+    border-top: 1px solid var(--边框色);
+    margin-top: 40px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .页面容器 {
+        padding: 0 15px;
+    }
+    
+    .页面头部 h1 {
+        font-size: 2rem;
+    }
+    
+    .控制面板 {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .搜索框 {
+        max-width: 100%;
+    }
+    
+    .相册容器 {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 15px;
+    }
+    
+    .相册项.列表视图 .相册缩略图 {
+        width: 150px;
+        height: 120px;
+    }
+    
+    .模态框内容 {
+        margin: 10px;
+        max-width: 95%;
+    }
+}
