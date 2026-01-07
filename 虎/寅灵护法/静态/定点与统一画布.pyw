@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
+import re
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, colorchooser
 from PIL import Image, ImageTk, ImageSequence
@@ -41,17 +42,47 @@ class GIFAnimator:
         main_frame = ttk.Frame(self.root)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         
-        # 左侧控制面板
-        control_frame = ttk.Frame(main_frame, width=300)
-        control_frame.pack(side=tk.LEFT, fill=tk.Y)
-        control_frame.pack_propagate(False)
+        # 左侧控制面板 - 使用Frame和Scrollbar实现滚动
+        control_panel = ttk.Frame(main_frame, width=300)
+        control_panel.pack(side=tk.LEFT, fill=tk.BOTH)
+        control_panel.pack_propagate(False)
+        
+        # 创建滚动条
+        scrollbar = ttk.Scrollbar(control_panel)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # 创建Canvas作为可滚动的容器
+        canvas = tk.Canvas(control_panel, yscrollcommand=scrollbar.set, highlightthickness=0)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # 将滚动条与Canvas关联
+        scrollbar.config(command=canvas.yview)
+        
+        # 创建内部框架（实际放置控件的地方）
+        inner_frame = ttk.Frame(canvas)
+        
+        # 将内部框架作为Canvas的窗口
+        canvas_frame = canvas.create_window((0, 0), window=inner_frame, anchor="nw")
+        
+        # 配置Canvas尺寸
+        def configure_canvas(event):
+            # 设置内部框架的宽度与Canvas相同
+            canvas.itemconfig(canvas_frame, width=event.width)
+            # 更新滚动区域
+            canvas.configure(scrollregion=canvas.bbox("all"))
+        
+        canvas.bind("<Configure>", configure_canvas)
         
         # 加载图片按钮
-        ttk.Button(control_frame, text="📁 加载图片文件夹", 
+        ttk.Button(inner_frame, text="📁 加载图片文件夹", 
                   command=self.load_images).pack(fill=tk.X, pady=10, padx=5)
         
+        # 导入锚点信息按钮
+        ttk.Button(inner_frame, text="📄 导入锚点信息", 
+                  command=self.import_anchor_info).pack(fill=tk.X, pady=(0, 10), padx=5)
+        
         # 图片列表框架
-        list_frame = ttk.LabelFrame(control_frame, text="图片列表", padding=5)
+        list_frame = ttk.LabelFrame(inner_frame, text="图片列表", padding=5)
         list_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         
         # 列表滚动条
@@ -65,7 +96,7 @@ class GIFAnimator:
         list_scrollbar.config(command=self.image_listbox.yview)
         
         # 缩放控制
-        zoom_frame = ttk.LabelFrame(control_frame, text="视图控制", padding=5)
+        zoom_frame = ttk.LabelFrame(inner_frame, text="视图控制", padding=5)
         zoom_frame.pack(fill=tk.X, padx=5, pady=5)
         
         ttk.Label(zoom_frame, text="缩放:").pack(side=tk.LEFT, padx=(5, 2))
@@ -91,7 +122,7 @@ class GIFAnimator:
                        command=self.redraw_image).pack(side=tk.LEFT, padx=5)
         
         # 锚点控制
-        anchor_frame = ttk.LabelFrame(control_frame, text="锚点控制", padding=5)
+        anchor_frame = ttk.LabelFrame(inner_frame, text="锚点控制", padding=5)
         anchor_frame.pack(fill=tk.X, padx=5, pady=5)
         
         self.anchor_label = ttk.Label(anchor_frame, text="当前锚点: 未设置")
@@ -126,7 +157,7 @@ class GIFAnimator:
         ttk.Button(batch_frame, text="清除当前", command=self.clear_current_anchor).pack(side=tk.LEFT, padx=2)
         
         # GIF设置
-        gif_frame = ttk.LabelFrame(control_frame, text="GIF输出", padding=5)
+        gif_frame = ttk.LabelFrame(inner_frame, text="GIF输出", padding=5)
         gif_frame.pack(fill=tk.X, padx=5, pady=5)
         
         # 帧率
@@ -150,7 +181,7 @@ class GIFAnimator:
         ttk.Button(output_frame, text="导出帧", command=self.export_aligned_frames).pack(side=tk.LEFT, padx=2)
         
         # 状态栏
-        self.status_label = ttk.Label(control_frame, text="就绪")
+        self.status_label = ttk.Label(inner_frame, text="就绪")
         self.status_label.pack(fill=tk.X, padx=5, pady=10)
         
         # 右侧图片显示区域
@@ -172,6 +203,10 @@ class GIFAnimator:
         ttk.Label(self.display_frame, text=info_text, foreground="gray", 
                  justify=tk.LEFT).pack(side=tk.BOTTOM, fill=tk.X, pady=5)
         
+        # 更新滚动区域
+        inner_frame.update_idletasks()
+        canvas.configure(scrollregion=canvas.bbox("all"))
+        
     def setup_bindings(self):
         """设置事件绑定"""
         self.canvas.bind("<Button-1>", self.on_canvas_click)
@@ -183,6 +218,82 @@ class GIFAnimator:
         self.canvas.bind("<Button-5>", self.on_mousewheel)
         self.canvas.bind("<Motion>", self.on_mouse_move)
         self.canvas.bind("<Configure>", self.on_canvas_resize)
+    
+    def import_anchor_info(self):
+        """手动导入锚点信息文件"""
+        file_path = filedialog.askopenfilename(
+            title="选择锚点信息文件",
+            filetypes=[("文本文件", "*.txt"), ("所有文件", "*.*")]
+        )
+        
+        if not file_path:
+            return
+        
+        if self.load_anchor_info_from_txt(file_path):
+            messagebox.showinfo("成功", f"已从 {os.path.basename(file_path)} 导入锚点信息")
+    
+    def load_anchor_info_from_txt(self, txt_path):
+        """从txt文件加载锚点信息"""
+        if not os.path.exists(txt_path):
+            return False
+        
+        try:
+            loaded_count = 0
+            with open(txt_path, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+            
+            # 多种可能的格式匹配模式
+            patterns = [
+                # 格式1: image.png: 锚点(100, 200)
+                r'([^:]+):\s*锚点\s*\(\s*(\d+)\s*,\s*(\d+)\s*\)',
+                # 格式2: image.png (100, 200)
+                r'([^:]+)\s*\(\s*(\d+)\s*,\s*(\d+)\s*\)',
+                # 格式3: image.png: x=100, y=200
+                r'([^:]+):\s*[Xx]\s*=\s*(\d+)\s*,\s*[Yy]\s*=\s*(\d+)',
+                # 格式4: image.png: (100, 200)
+                r'([^:]+):\s*\(\s*(\d+)\s*,\s*(\d+)\s*\)',
+            ]
+            
+            for line in lines:
+                line = line.strip()
+                if not line or line.startswith(("#", "=", "对齐信息", "画布尺寸", "背景颜色", "总帧数", "成功导出")):
+                    continue
+                
+                for pattern in patterns:
+                    match = re.search(pattern, line)
+                    if match:
+                        img_name = match.group(1).strip()
+                        try:
+                            x = int(match.group(2))
+                            y = int(match.group(3))
+                            
+                            # 检查该图片是否在已加载列表中
+                            if img_name in self.image_names:
+                                img_index = self.image_names.index(img_name)
+                                self.anchor_points[img_name] = (x, y)
+                                loaded_count += 1
+                                # 如果当前选中的是这个图片，更新显示
+                                if self.current_image_index == img_index:
+                                    self.anchor_label.config(text=f"当前锚点: ({x}, {y})")
+                                    self.x_var.set(str(x))
+                                    self.y_var.set(str(y))
+                        except ValueError:
+                            continue
+                        break
+            
+            if loaded_count > 0:
+                self.status_label.config(text=f"已从文件导入 {loaded_count}/{len(self.images)} 个锚点")
+                # 重新绘制当前图片以显示新的锚点
+                if self.current_image_index >= 0:
+                    self.redraw_image()
+                return True
+            else:
+                messagebox.showwarning("警告", f"未从文件中找到有效的锚点信息")
+                return False
+                
+        except Exception as e:
+            messagebox.showerror("错误", f"读取锚点信息文件时出错:\n{str(e)}")
+            return False
         
     def load_images(self):
         """加载图片文件夹"""
@@ -218,6 +329,7 @@ class GIFAnimator:
                     self.image_names.append(file)
                     
                     self.image_listbox.insert(tk.END, file)
+                    # 默认锚点设为图片中心
                     self.anchor_points[file] = (img.width // 2, img.height // 2)
                     
                 except Exception as e:
@@ -225,6 +337,26 @@ class GIFAnimator:
         
         if self.images:
             self.status_label.config(text=f"已加载 {len(self.images)} 张图片")
+            
+            # 检查文件夹中是否有对齐信息.txt文件
+            anchor_info_path = os.path.join(folder, "对齐信息.txt")
+            if os.path.exists(anchor_info_path):
+                if messagebox.askyesno("发现锚点信息", 
+                                      f"检测到对齐信息.txt文件，是否自动导入锚点坐标？"):
+                    self.load_anchor_info_from_txt(anchor_info_path)
+            
+            # 检查文件夹中是否有其他可能的锚点信息文件
+            else:
+                # 检查常见的锚点信息文件名
+                anchor_file_patterns = ["anchor_info.txt", "锚点信息.txt", "points.txt", "对齐.txt"]
+                for pattern in anchor_file_patterns:
+                    pattern_path = os.path.join(folder, pattern)
+                    if os.path.exists(pattern_path):
+                        if messagebox.askyesno("发现锚点信息", 
+                                              f"检测到{pattern}文件，是否自动导入锚点坐标？"):
+                            self.load_anchor_info_from_txt(pattern_path)
+                            break
+            
             if self.image_listbox.size() > 0:
                 self.image_listbox.selection_set(0)
                 self.on_image_select(None)
@@ -1009,7 +1141,7 @@ class GIFAnimator:
             if i < len(self.image_names):
                 original_name = self.image_names[i]
                 name, ext = os.path.splitext(original_name)
-                export_name = f"{name}_aligned{ext}"
+                export_name = f"{name}{ext}"
             else:
                 export_name = f"frame_{i:03d}.png"
             
