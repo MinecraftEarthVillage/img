@@ -26,7 +26,7 @@ class GIFAnimator:
         self.is_panning = False
         
         # 显示设置
-        self.bg_color = (0, 0, 0, 0)
+        self.bg_color = (0, 0, 0, 0) # RGBA，A=0表示完全透明
         self.gif_duration = 100
         self.loop_count = 0
         
@@ -889,12 +889,56 @@ class GIFAnimator:
     
     def choose_bg_color(self):
         """选择背景颜色"""
-        color = colorchooser.askcolor(title="选择背景颜色", initialcolor='#000000')
+        # 创建一个自定义对话框
+        dialog = tk.Toplevel(self.root)
+        dialog.title("设置背景")
+        dialog.geometry("300x150")
+        dialog.resizable(False, False)
+        dialog.transient(self.root)
+        dialog.grab_set()
+        
+        # 窗口居中
+        dialog.update_idletasks()
+        x = self.root.winfo_x() + (self.root.winfo_width() - dialog.winfo_width()) // 2
+        y = self.root.winfo_y() + (self.root.winfo_height() - dialog.winfo_height()) // 2
+        dialog.geometry(f"+{x}+{y}")
+        
+        # 标题
+        ttk.Label(dialog, text="设置背景颜色", font=("", 12)).pack(pady=(15, 10))
+        
+        # 按钮框架
+        btn_frame = ttk.Frame(dialog)
+        btn_frame.pack(pady=10)
+        
+        # 透明按钮
+        ttk.Button(btn_frame, text="透明", width=12,
+                  command=lambda: self.set_bg_transparent(dialog)).pack(pady=5)
+        
+        # 选择颜色按钮
+        ttk.Button(btn_frame, text="选择颜色...", width=12,
+                  command=lambda: self.pick_bg_color(dialog)).pack(pady=5)
+        
+        # 取消按钮
+        ttk.Button(dialog, text="取消", 
+                  command=dialog.destroy).pack(pady=(0, 10))
+    
+    def set_bg_transparent(self, dialog):
+        """设置背景为透明"""
+        self.bg_color = (0, 0, 0, 0)
+        self.status_label.config(text="背景颜色: 透明")
+        dialog.destroy()
+    
+    def pick_bg_color(self, dialog):
+        """选择具体颜色"""
+        color = colorchooser.askcolor(title="选择背景颜色", parent=dialog)
         if color[0]:
             r, g, b = [int(c) for c in color[0]]
             self.bg_color = (r, g, b, 255)
             self.status_label.config(text=f"背景颜色: RGB({r}, {g}, {b})")
-    
+        dialog.destroy()
+
+
+
     def calculate_canvas_size(self):
         """计算统一画布的大小"""
         if not self.images:
@@ -960,7 +1004,11 @@ class GIFAnimator:
         return frames
     
     def preview_animation(self):
-        """预览动画"""
+        """预览动画 - 只允许一个预览窗口"""
+        # 如果已有预览窗口，先关闭它
+        if hasattr(self, 'preview_window') and self.preview_window and self.preview_window.winfo_exists():
+            self.stop_preview()
+        
         frames = self.create_aligned_frames()
         if not frames:
             messagebox.showwarning("警告", "请先加载图片并设置锚点！")
@@ -973,43 +1021,49 @@ class GIFAnimator:
             return
         
         # 创建预览窗口
-        preview_window = tk.Toplevel(self.root)
-        preview_window.title("动画预览")
+        self.preview_window = tk.Toplevel(self.root)
+        self.preview_window.title("动画预览")
         
         # 设置窗口尺寸
         window_width = min(800, max(200, canvas_width))
         window_height = min(600, max(150, canvas_height))
-        preview_window.geometry(f"{window_width}x{window_height}")
-        preview_window.minsize(200, 150)
+        self.preview_window.geometry(f"{window_width}x{window_height}")
+        self.preview_window.minsize(200, 150)
         
         # 预览画布
-        preview_canvas = tk.Canvas(preview_window, bg='gray20')
-        preview_canvas.pack(fill=tk.BOTH, expand=True)
+        self.preview_canvas = tk.Canvas(self.preview_window, bg='gray20')
+        self.preview_canvas.pack(fill=tk.BOTH, expand=True)
         
         # 动画控制变量
         self.preview_frames = frames
         self.preview_index = 0
-        self.preview_canvas = preview_canvas
-        self.preview_window = preview_window
+        self.preview_active = True  # 新增：标记预览是否活跃
         
         # 开始动画
         self.animate_preview()
         
         # 关闭窗口时停止动画
-        preview_window.protocol("WM_DELETE_WINDOW", self.stop_preview)
+        self.preview_window.protocol("WM_DELETE_WINDOW", self.stop_preview)
     
     def animate_preview(self):
         """动画循环"""
-        if not hasattr(self, 'preview_frames') or not hasattr(self, 'preview_window'):
+        # 检查预览窗口是否还存在且活跃
+        if not hasattr(self, 'preview_window') or not self.preview_window or not self.preview_window.winfo_exists():
+            return
+        
+        # 检查预览是否活跃
+        if not hasattr(self, 'preview_active') or not self.preview_active:
             return
         
         try:
             # 检查窗口是否还存在
             if not self.preview_window.winfo_exists():
+                self.preview_active = False
                 return
             
             # 检查帧列表是否为空
-            if not self.preview_frames:
+            if not hasattr(self, 'preview_frames') or not self.preview_frames:
+                self.preview_active = False
                 return
             
             # 计算下一帧
@@ -1057,22 +1111,46 @@ class GIFAnimator:
             except ValueError:
                 duration = 100
             
+            # 使用self.preview_window的after方法，而不是self.root
             self.preview_window.after(duration, self.animate_preview)
             
         except tk.TclError:
             # 窗口已关闭
-            pass
+            self.preview_active = False
         except Exception as e:
             print(f"预览动画错误: {e}")
-            self.stop_preview()
+            self.preview_active = False
     
     def stop_preview(self):
         """停止预览"""
-        if hasattr(self, 'preview_window'):
+        # 设置活跃标志为False，停止动画循环
+        if hasattr(self, 'preview_active'):
+            self.preview_active = False
+        
+        if hasattr(self, 'preview_window') and self.preview_window:
             try:
-                self.preview_window.destroy()
+                # 取消所有待处理的after事件
+                if self.preview_window.winfo_exists():
+                    # 注意：这里不能直接取消，因为after返回的是id
+                    # 我们可以设置一个标志让动画循环自己停止
+                    pass
             except:
                 pass
+            
+            try:
+                self.preview_window.destroy()
+            except tk.TclError:
+                # 窗口可能已经销毁
+                pass
+            
+            # 清理引用
+            self.preview_window = None
+        
+        # 清理其他预览相关的引用
+        if hasattr(self, 'preview_frames'):
+            self.preview_frames = None
+        if hasattr(self, 'preview_canvas'):
+            self.preview_canvas = None
     
     def create_gif(self):
         """创建GIF文件"""
