@@ -1,3 +1,2 @@
 # 自动检测文本文件并执行LF规范化
 * text=auto
-图片索引.json filter=lfs diff=lfs merge=lfs -text
